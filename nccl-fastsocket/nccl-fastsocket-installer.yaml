@@ -1,0 +1,59 @@
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nccl-fastsocket-installer
+  namespace: kube-system
+  labels:
+    k8s-app: nccl-fastsocket-installer
+spec:
+  selector:
+    matchLabels:
+      k8s-app: nccl-fastsocket-installer
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nccl-fastsocket-installer
+        k8s-app: nccl-fastsocket-installer
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: cloud.google.com/gke-accelerator
+                operator: Exists
+      tolerations:
+      - operator: "Exists"
+      volumes:
+      - name: nvidia-install-dir-host
+        hostPath:
+          path: /home/kubernetes/bin/nvidia
+      initContainers:
+      - image: nvidia/cuda:11.6.0-base-ubuntu20.04
+        name: nccl-fastsocket-installer
+        command:
+        - bash
+        - -c
+        - |
+          set -x
+          set -e
+          apt-get update && apt-get install -y --no-install-recommends curl gnupg
+          echo "deb https://packages.cloud.google.com/apt google-fast-socket main" | tee /etc/apt/sources.list.d/google-fast-socket.list
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+          apt update &&  apt install -y --no-install-recommends google-fast-socket
+          cp /usr/lib/libnccl-net.so $NCCL_INSTALL_DIR
+        securityContext:
+          privileged: true
+        env:
+        - name: NCCL_INSTALL_DIR
+          value: /usr/local/nvidia/lib64
+        volumeMounts:
+        - name: nvidia-install-dir-host
+          mountPath: /usr/local/nvidia
+      containers:
+      - image: "gcr.io/google-containers/pause:2.0"
+        name: pause
+

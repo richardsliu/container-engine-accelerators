@@ -1,0 +1,43 @@
+apiVersion: kubeflow.org/v1
+kind: MPIJob
+metadata:
+  name: nccl-test-mpi
+  namespace: kubeflow
+spec:
+  slotsPerWorker: 1
+  runPolicy:
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          containers:
+          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi:20221626
+            name: mpi
+            command:
+            - mpirun
+            args:
+            - --allow-run-as-root
+            - -np
+            - "10"
+            - ./build/all_reduce_perf
+            - -b
+            - "8"
+            - -e
+            - "128M"
+            - -f
+            - "2"
+            resources:
+              limits:
+                nvidia.com/gpu: 1
+    Worker:
+      replicas: 10
+      template:
+        spec:
+          containers:
+          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi:20221626
+            name: mpi
+            resources:
+              limits:
+                nvidia.com/gpu: 1
