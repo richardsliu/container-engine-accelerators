@@ -13,31 +13,59 @@ spec:
       template:
         spec:
           containers:
-          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi:20221626
+          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi@sha256:8dcc2baf8c0c3ccb63fee9a48e429fbf1f79a57453c67cd07f84fe1f9c6dff73
             name: mpi
             command:
             - mpirun
             args:
             - --allow-run-as-root
             - -np
-            - "10"
+            - "2"
+            - -mca
+            - btl_tcp_if_exclude
+            - lo
+            - -mca
+            - pml
+            - ob1
+            - -mca
+            - btl
+            - ^openib
+            - --bind-to
+            - none
+            - -map-by
+            - slot
+            - -x
+            - LD_LIBRARY_PATH
+            - -x
+            - PATH
+            - -x
+            - NCCL_SOCKET_IFNAME=eth0
+            - -x
+            - NCCL_DEBUG=INFO
             - ./build/all_reduce_perf
             - -b
             - "8"
             - -e
-            - "128M"
+            - "64G"
             - -f
-            - "2"
+            - "8"
+            - -g
+            - "8"
             resources:
+              requests:
+                memory: "64G"
               limits:
-                nvidia.com/gpu: 1
+                nvidia.com/gpu: 8
     Worker:
-      replicas: 10
+      replicas: 1
       template:
         spec:
           containers:
-          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi:20221626
+          - image: gcr.io/ricliu-gke-dev/nccl-test-mpi@sha256:8dcc2baf8c0c3ccb63fee9a48e429fbf1f79a57453c67cd07f84fe1f9c6dff73
             name: mpi
             resources:
+              requests:
+                memory: "64G"
               limits:
-                nvidia.com/gpu: 1
+                nvidia.com/gpu: 8
+
