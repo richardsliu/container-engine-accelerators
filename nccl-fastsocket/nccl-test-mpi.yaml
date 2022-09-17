@@ -39,8 +39,6 @@ spec:
             - PATH
             - -x
             - NCCL_SOCKET_IFNAME=eth0
-            - -x
-            - NCCL_DEBUG=INFO
             - ./build/all_reduce_perf
             - -b
             - "8"
