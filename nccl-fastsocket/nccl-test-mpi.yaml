@@ -2,7 +2,6 @@ apiVersion: kubeflow.org/v1
 kind: MPIJob
 metadata:
   name: nccl-test-mpi
-  namespace: kubeflow
 spec:
   slotsPerWorker: 1
   runPolicy:
