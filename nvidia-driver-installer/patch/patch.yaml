@@ -1,0 +1,29 @@
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: gpu-config-generator
+        image: "marketplace.gcr.io/google/python:latest"
+        command: ["python3", "/bin/gpu-config-generator.py", "--health-critical-xid=$(HealthCriticalXid_KEY)"]
+        volumeMounts:
+        - name: configmap-volume
+          mountPath: /bin/gpu-config-generator.py
+          readOnly: true
+          subPath: gpu-config-generator.py
+        - name: nvidia-config
+          mountPath: /etc/nvidia
+        env:
+          - name: HealthCriticalXid_KEY
+            valueFrom:
+              configMapKeyRef:
+                name: xid-config
+                key: HealthCriticalXid
+      volumes:
+      - name: configmap-volume
+        configMap:
+          defaultMode: 0700
+          name: gpu-config-generator
+      - name: nvidia-config
+        hostPath:
+          path: /etc/nvidia
+          type: DirectoryOrCreate

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-config-generator
+  namespace: kube-system
+data:
+  gpu-config-generator.py: |-
+    import argparse
+    import json
+    import string
+    import os
+
+    def dump_to_file(conf, filename):
+      with open(filename, 'w+') as file:
+        file.write(json.dumps(conf, indent=2))
+        file.write('\n')
+
+    def main(health_critical_xid):
+      filename = "/etc/nvidia/gpu_config.json"
+      if (os.path.exists(filename)):
+        with open(filename, 'r') as file:
+          accelerator_config = json.load(file)
+      else:
+        accelerator_config = {}
+      if (len(health_critical_xid)):
+        accelerator_config["HealthCriticalXid"] = list(map(int, health_critical_xid.split(",")))
+
+      dump_to_file(accelerator_config, filename)
+
+    if __name__ == '__main__':
+        PARSER = argparse.ArgumentParser(
+            description='Generates the GPU configuration file for GKE nodes.')
+        PARSER.add_argument(
+        '--health-critical-xid',
+            type=str,
+            required=True,
+            help='Xid codes that are treated as hardware error')
+        ARGS = PARSER.parse_args()
+
+        main(ARGS.health_critical_xid)
